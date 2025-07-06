@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Chat Test</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
+        .message { margin: 5px 0; padding: 5px; background: white; border-radius: 3px; }
+        .system { background: #e7f3ff !important; }
+        .input-group { display: flex; margin: 10px 0; }
+        .input-group input { flex: 1; padding: 8px; margin-right: 10px; }
+        .input-group button { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .status { padding: 10px; background: #f8f9fa; border-radius: 3px; }
+        .online { color: green; }
+        .offline { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Socket.IO Chat Test</h1>
+        
+        <div class="section">
+            <h3>連線狀態</h3>
+            <div class="status">
+                狀態: <span id="status" class="offline">未連線</span>
+            </div>
+            <div class="input-group">
+                <input type="text" id="token" placeholder="JWT Token" style="flex: 2;">
+                <button onclick="connect()">連線</button>
+                <button onclick="disconnect()">斷線</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>聊天室操作</h3>
+            <div class="input-group">
+                <input type="text" id="roomId" placeholder="聊天室 ID">
+                <button onclick="joinRoom()">加入聊天室</button>
+                <button onclick="leaveRoom()">離開聊天室</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>訊息區域</h3>
+            <div id="messages" class="messages"></div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="輸入訊息..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">發送</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>線上用戶</h3>
+            <div id="onlineUsers"></div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentRoomId = null;
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                alert('請輸入 JWT Token');
+                return;
+            }
+
+            socket = io('http://localhost:3000', {
+                auth: {
+                    token: token
+                }
+            });
+
+            socket.on('connect', () => {
+                updateStatus('已連線', 'online');
+                addMessage('系統', '已連接到服務器', 'system');
+            });
+
+            socket.on('disconnect', () => {
+                updateStatus('已斷線', 'offline');
+                addMessage('系統', '與服務器斷開連接', 'system');
+            });
+
+            socket.on('new-message', (data) => {
+                const senderName = data.sender ? data.sender.name : '系統';
+                addMessage(senderName, data.content, data.type);
+            });
+
+            socket.on('user-joined', (data) => {
+                addMessage('系統', `${data.name} 加入了聊天室`, 'system');
+            });
+
+            socket.on('user-left', (data) => {
+                addMessage('系統', `${data.name} 離開了聊天室`, 'system');
+            });
+
+            socket.on('user-online', (data) => {
+                addMessage('系統', `${data.name} 上線了`, 'system');
+            });
+
+            socket.on('user-offline', (data) => {
+                addMessage('系統', `用戶 ${data.userId} 下線了`, 'system');
+            });
+
+            socket.on('user-typing', (data) => {
+                if (data.isTyping) {
+                    addMessage('系統', `${data.name} 正在輸入...`, 'system');
+                }
+            });
+
+            socket.on('error', (data) => {
+                addMessage('錯誤', data.message, 'system');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+        }
+
+        function joinRoom() {
+            const roomId = document.getElementById('roomId').value;
+            if (!socket || !roomId) {
+                alert('請先連線並輸入聊天室 ID');
+                return;
+            }
+
+            currentRoomId = roomId;
+            socket.emit('join-room', { roomId });
+            addMessage('系統', `嘗試加入聊天室: ${roomId}`, 'system');
+        }
+
+        function leaveRoom() {
+            if (!socket || !currentRoomId) {
+                alert('請先加入聊天室');
+                return;
+            }
+
+            socket.emit('leave-room', { roomId: currentRoomId });
+            addMessage('系統', `離開聊天室: ${currentRoomId}`, 'system');
+            currentRoomId = null;
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            
+            if (!socket || !currentRoomId || !content) {
+                alert('請先連線、加入聊天室並輸入訊息');
+                return;
+            }
+
+            socket.emit('send-message', {
+                content,
+                chatRoomId: currentRoomId,
+                type: 'text'
+            });
+
+            messageInput.value = '';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function updateStatus(text, className) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = text;
+            statusElement.className = className;
+        }
+
+        function addMessage(sender, content, type = 'text') {
+            const messagesContainer = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            messageElement.innerHTML = `<strong>${sender}</strong> [${timestamp}]: ${content}`;
+            
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
