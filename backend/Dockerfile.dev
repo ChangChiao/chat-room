@@ -1,0 +1,33 @@
+# Development Dockerfile with hot reload support
+FROM node:18-alpine
+
+# Install additional tools for development
+RUN apk add --no-cache bash
+
+# Create app directory
+WORKDIR /app
+
+# Create a non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 -G nodejs
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies)
+RUN npm ci
+
+# Copy application files
+COPY . .
+
+# Change ownership to non-root user
+RUN chown -R nestjs:nodejs /app
+
+# Switch to non-root user
+USER nestjs
+
+# Expose ports
+EXPOSE 3000 9229
+
+# Start in development mode with debugging
+CMD ["npm", "run", "start:debug"]

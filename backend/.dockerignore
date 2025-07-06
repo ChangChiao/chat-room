@@ -1,0 +1,30 @@
+node_modules
+npm-debug.log
+dist
+.env
+.env.*
+.git
+.gitignore
+README.md
+.eslintrc.js
+.prettierrc
+.DS_Store
+coverage
+.nyc_output
+.idea
+.vscode
+*.log
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+# Test files
+test/
+*.spec.ts
+*.test.ts
+# Documentation
+docs/
+*.md
+# Temporary files
+tmp/
+temp/

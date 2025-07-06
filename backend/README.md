@@ -1,98 +1,339 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 即時聊天室後端 API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+使用 NestJS、PostgreSQL 和 Socket.io 開發的即時聊天室應用。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 功能特色
 
-## Description
+- ✅ Google OAuth 2.0 第三方登入
+- ✅ JWT 身份驗證
+- ✅ 即時訊息通訊 (Socket.io)
+- ✅ 一對一私聊
+- ✅ 群組聊天（最多 30 人）
+- ✅ 訊息歷史記錄
+- ✅ 線上狀態追蹤
+- ✅ 打字狀態顯示
+- ✅ 錯誤處理和日誌系統
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 技術堆疊
 
-## Project setup
+- **框架**: NestJS
+- **資料庫**: PostgreSQL + TypeORM
+- **即時通訊**: Socket.io
+- **認證**: Passport.js (JWT + Google OAuth)
+- **驗證**: class-validator
+- **日誌**: NestJS Logger
 
-```bash
-$ npm install
-```
+## 安裝與設定
 
-## Compile and run the project
+### 1. 環境需求
 
-```bash
-# development
-$ npm run start
+- Node.js >= 14
+- PostgreSQL >= 12
+- npm 或 yarn
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
+### 2. 安裝依賴
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
+### 3. 環境設定
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+複製 `.env.example` 到 `.env` 並設定以下變數：
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Database
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=chatroom_user
+DATABASE_PASSWORD=chatroom_password
+DATABASE_NAME=chatroom_db
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRATION_TIME=3600
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+
+# App
+PORT=3000
+FRONTEND_URL=http://localhost:3001
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. 建立資料庫
 
-## Resources
+```bash
+# 使用提供的腳本
+./scripts/setup-database.sh
 
-Check out a few resources that may come in handy when working with NestJS:
+# 或手動建立
+psql -U postgres
+CREATE USER chatroom_user WITH PASSWORD 'chatroom_password';
+CREATE DATABASE chatroom_db OWNER chatroom_user;
+GRANT ALL PRIVILEGES ON DATABASE chatroom_db TO chatroom_user;
+\q
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 5. 啟動應用
 
-## Support
+```bash
+# 開發模式
+npm run start:dev
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# 生產模式
+npm run build
+npm run start:prod
+```
 
-## Stay in touch
+## API 文件
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 認證 API
 
-## License
+#### 註冊
+```http
+POST /auth/register
+Content-Type: application/json
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "name": "User Name"
+}
+```
+
+#### 登入
+```http
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+#### Google OAuth 登入
+```http
+GET /auth/google
+```
+
+#### 回應格式
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "User Name",
+    "avatar": "https://example.com/avatar.jpg"
+  }
+}
+```
+
+### 用戶 API
+
+#### 獲取用戶資料
+```http
+GET /users/profile
+Authorization: Bearer {token}
+```
+
+### 聊天室 API
+
+#### 建立聊天室
+```http
+POST /chat/rooms
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "type": "private",  // 或 "group"
+  "name": "群組名稱",  // 群組必填
+  "description": "群組描述",  // 選填
+  "memberIds": ["user-id-1", "user-id-2"]
+}
+```
+
+#### 獲取用戶聊天室列表
+```http
+GET /chat/rooms
+Authorization: Bearer {token}
+```
+
+#### 獲取聊天室詳情
+```http
+GET /chat/rooms/{roomId}
+Authorization: Bearer {token}
+```
+
+#### 獲取聊天室訊息
+```http
+GET /chat/rooms/{roomId}/messages?page=1&limit=50
+Authorization: Bearer {token}
+```
+
+#### 加入成員
+```http
+POST /chat/rooms/{roomId}/members/{userId}
+Authorization: Bearer {token}
+```
+
+#### 移除成員
+```http
+DELETE /chat/rooms/{roomId}/members/{userId}
+Authorization: Bearer {token}
+```
+
+#### 標記已讀
+```http
+POST /chat/rooms/{roomId}/read
+Authorization: Bearer {token}
+```
+
+## WebSocket 事件
+
+### 連線
+```javascript
+const socket = io('http://localhost:3000', {
+  auth: {
+    token: 'JWT_TOKEN'
+  }
+});
+```
+
+### 客戶端事件
+
+#### join-room
+```javascript
+socket.emit('join-room', { roomId: 'room-uuid' });
+```
+
+#### leave-room
+```javascript
+socket.emit('leave-room', { roomId: 'room-uuid' });
+```
+
+#### send-message
+```javascript
+socket.emit('send-message', {
+  content: '訊息內容',
+  chatRoomId: 'room-uuid',
+  type: 'text'
+});
+```
+
+#### typing
+```javascript
+socket.emit('typing', {
+  roomId: 'room-uuid',
+  isTyping: true
+});
+```
+
+### 服務器事件
+
+#### new-message
+```javascript
+socket.on('new-message', (data) => {
+  console.log(data);
+  // {
+  //   id: 'message-uuid',
+  //   content: '訊息內容',
+  //   type: 'text',
+  //   createdAt: '2023-01-01T00:00:00.000Z',
+  //   sender: { id, name, avatar },
+  //   chatRoomId: 'room-uuid'
+  // }
+});
+```
+
+#### user-joined / user-left
+```javascript
+socket.on('user-joined', (data) => {
+  console.log(`${data.name} 加入聊天室`);
+});
+```
+
+#### user-online / user-offline
+```javascript
+socket.on('user-online', (data) => {
+  console.log(`${data.name} 上線了`);
+});
+```
+
+#### user-typing
+```javascript
+socket.on('user-typing', (data) => {
+  if (data.isTyping) {
+    console.log(`${data.name} 正在輸入...`);
+  }
+});
+```
+
+#### error
+```javascript
+socket.on('error', (data) => {
+  console.error(data.message);
+});
+```
+
+## 測試
+
+### 單元測試
+```bash
+npm run test
+```
+
+### E2E 測試
+```bash
+npm run test:e2e
+```
+
+### Socket.io 測試頁面
+訪問 http://localhost:3000/test-socket.html
+
+## 資料庫架構
+
+詳見 [DATABASE_DESIGN.md](./DATABASE_DESIGN.md)
+
+## 錯誤處理
+
+應用程式包含完整的錯誤處理機制：
+
+- HTTP 異常過濾器
+- WebSocket 異常過濾器
+- 全域驗證管道
+- 詳細的錯誤日誌
+
+## 安全性
+
+- JWT Token 驗證
+- 密碼使用 bcrypt 加密
+- 輸入驗證和消毒
+- CORS 設定
+- 環境變數保護
+
+## 部署
+
+### Docker
+```bash
+docker build -t chatroom-backend .
+docker run -p 3000:3000 --env-file .env chatroom-backend
+```
+
+### PM2
+```bash
+npm run build
+pm2 start dist/main.js --name chatroom-backend
+```
+
+## 貢獻
+
+歡迎提交 Issue 和 Pull Request！
+
+## 授權
+
+MIT License

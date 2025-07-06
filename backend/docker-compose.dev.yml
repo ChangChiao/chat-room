@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 資料庫服務 (開發環境)
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: chatroom-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chatroom_dev
+      POSTGRES_PASSWORD: chatroom_dev_password
+      POSTGRES_DB: chatroom_dev_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - chatroom-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatroom_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 快取服務 (開發環境)
+  redis-dev:
+    image: redis:7-alpine
+    container_name: chatroom-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    networks:
+      - chatroom-dev-network
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NestJS 應用服務 (開發環境)
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: chatroom-backend-dev
+    restart: unless-stopped
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    environment:
+      # 應用設定
+      NODE_ENV: development
+      PORT: 3000
+      
+      # 資料庫設定
+      DATABASE_HOST: postgres-dev
+      DATABASE_PORT: 5432
+      DATABASE_USER: chatroom_dev
+      DATABASE_PASSWORD: chatroom_dev_password
+      DATABASE_NAME: chatroom_dev_db
+      
+      # Redis 設定
+      REDIS_HOST: redis-dev
+      REDIS_PORT: 6379
+      
+      # JWT 設定
+      JWT_SECRET: your-dev-jwt-secret-key
+      JWT_EXPIRATION_TIME: 86400
+      
+      # Google OAuth 設定 (開發環境)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-your-dev-google-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-your-dev-google-client-secret}
+      GOOGLE_CALLBACK_URL: http://localhost:3000/auth/google/callback
+      
+      # 前端 URL
+      FRONTEND_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js 調試端口
+    networks:
+      - chatroom-dev-network
+    volumes:
+      # 掛載源代碼以支援熱重載
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./nest-cli.json:/app/nest-cli.json
+      # 防止 node_modules 被覆蓋
+      - /app/node_modules
+    command: npm run start:debug
+
+  # pgAdmin (資料庫管理工具，可選)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: chatroom-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@chatroom.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - chatroom-dev-network
+    depends_on:
+      - postgres-dev
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+networks:
+  chatroom-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  pgadmin_data:
