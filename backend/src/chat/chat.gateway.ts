@@ -6,6 +6,8 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  UseFilters,
+  UseInterceptors,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UseGuards, Logger } from '@nestjs/common';
@@ -15,6 +17,8 @@ import { ChatService } from './chat.service';
 import { MessagesService } from '../messages/messages.service';
 import { CreateMessageDto } from '../messages/dto/create-message.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
+import { WsExceptionsFilter } from '../common/filters/ws-exception.filter';
+import { WsLoggingInterceptor } from '../common/interceptors/ws-logging.interceptor';
 
 @WebSocketGateway({
   cors: {
@@ -22,6 +26,8 @@ import { JoinRoomDto } from './dto/join-room.dto';
     methods: ['GET', 'POST'],
   },
 })
+@UseFilters(new WsExceptionsFilter())
+@UseInterceptors(new WsLoggingInterceptor())
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
