@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 
-export default function GoogleCallbackPage() {
+function CallbackContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,7 +37,7 @@ export default function GoogleCallbackPage() {
         login(user, token);
         setStatus('success');
         router.push('/chat');
-      } catch (err) {
+      } catch {
         setStatus('error');
         setTimeout(() => {
           router.push('/auth/login');
@@ -76,5 +76,20 @@ export default function GoogleCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CallbackContent />
+    </Suspense>
   );
 }

@@ -50,8 +50,11 @@ export default function RegisterPage() {
       });
       login(response.data.user, response.data.access_token);
       router.push('/chat');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+    } catch (err: unknown) {
+      const errorMessage = err && typeof err === 'object' && 'response' in err 
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Registration failed'
+        : 'Registration failed';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

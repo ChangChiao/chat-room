@@ -41,8 +41,11 @@ export default function LoginPage() {
       const response = await api.post<AuthResponse>('/auth/login', data);
       login(response.data.user, response.data.access_token);
       router.push('/chat');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+    } catch (err: unknown) {
+      const errorMessage = err && typeof err === 'object' && 'response' in err 
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Login failed'
+        : 'Login failed';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +125,7 @@ export default function LoginPage() {
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/register" className="font-medium text-primary hover:underline">
                 Sign up
               </Link>
